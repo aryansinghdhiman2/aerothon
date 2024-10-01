@@ -247,7 +247,6 @@ class ConsumerThread:
                     print(f"Frame number {frame_no}")
                     metadata_array.append((frame_no, video_name))
 
-                    # Bulk process
                     msg_count += 1
                     if msg_count % self.batch_size == 0:
                         for frame in msg_array:
