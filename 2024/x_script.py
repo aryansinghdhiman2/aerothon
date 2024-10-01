@@ -49,8 +49,8 @@ def main(image_path, processor, model, save_path):
     save_annotated_image(annotated_image, save_path)
     annotated_image.show()
 
-image_path = "./2024/img.jpeg"
-save_path = "./2024/out.jpeg"
+image_path = "./NewDataset/images/00017797.png"
+save_path = "./test/annotated_image.png"
 
 
 processor = AutoImageProcessor.from_pretrained("sansh2356/DETR_finetune")
