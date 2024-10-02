@@ -200,7 +200,8 @@ def draw_boxes(image, results):
         start_point = (int(box[0]), int(box[1]))
         end_point = (int(box[2]), int(box[3]))
         color = (0, 255, 0)
-
+        center_point = (int((box[0] + box[2]) / 2), int((box[1] + box[3]) / 2))
+        print("Center of the bbox",center_point)
         thickness = 2
         cv2.rectangle(image, start_point, end_point, color, thickness)
 
