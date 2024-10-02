@@ -278,6 +278,7 @@ class ConsumerThread:
                                     outfile.write('\n')
 
                                 for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+                                    ### ---------------- All Detections happen here -------------------------------- ### 
                                     box = [round(i, 2) for i in box.tolist()]
                                     predicted_label = label.item()
                                     predicted_confidence_score = score.item()
@@ -292,14 +293,11 @@ class ConsumerThread:
                                     }, outfile)
                                     outfile.write('\n')
 
-                            # Draw bounding boxes and show the frame
                             annotated_img = draw_boxes(frame, results)
 
-                            # Show the processed frame in a window
                             cv2.imshow("Processed Frame", annotated_img)
 
-                            # Add a delay (in milliseconds) to control the frame rate (optional)
-                            # You can adjust it as needed, or remove it if real-time is desired
+
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
                 # Commit the Kafka consumer
