@@ -1,6 +1,7 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, mavutil
 import time
 from flask import Flask, request
+from drone_helper import arm,getCurrentLocation,moveToAlt
 
 GUIDED = VehicleMode("GUIDED")
 AUTO = VehicleMode("AUTO")
@@ -80,6 +81,13 @@ def moveToAlt():
         0, 0)
     vehicle.send_mavlink(msg)
 
+@app.post("/armAndLaunch")
+def launch():
+    arm()
+    location = getCurrentLocation(vehicle)
+    moveToAlt(vehicle,location.lat,location.lon,10)
+    return "Okay"
+    pass
 
 # vehicle = connect('/dev/ttyACM0',baud=5760)
 vehicle = connect('tcp:localhost:5763', baud=5760)

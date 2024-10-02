@@ -177,6 +177,7 @@ from confluent_kafka import Consumer, KafkaError, KafkaException
 import cv2
 import numpy as np
 import json
+import requests
 from PIL import Image
 import time
 import torch
@@ -229,13 +230,17 @@ class ConsumerThread:
         try:
             while True:
                 msg = consumer.poll(0)
-                print(msg)
+                time.sleep(3)
                 if msg is None:
                     continue
-                elif msg.error() is None:
 
-                    # Convert image bytes data to numpy array of dtype uint8
-                    nparr = np.frombuffer(msg.value(), np.uint8)
+                elif msg.error() is None:
+                    bytes_arr = msg.value().decode("utf-8")
+                    json_obj = json.loads(bytes_arr)
+                    # print(type(json_obj), json_obj)
+                    location = json_obj["location"]
+                    img_string = json_obj["frame"].encode("latin1")
+                    nparr = np.frombuffer(img_string, np.uint8)
 
                     # Decode image
                     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -267,7 +272,8 @@ class ConsumerThread:
                                         "frame_no": frame_no,
                                         "video_name": video_name,
                                         "label": "None",
-                                        "predicted_confidence_score": "None"
+                                        "predicted_confidence_score": "None",
+                                        "location": location
                                     }, outfile)
                                     outfile.write('\n')
 
@@ -280,7 +286,9 @@ class ConsumerThread:
                                         "frame_no": frame_no,
                                         "video_name": video_name,
                                         "label": predicted_label,
-                                        "predicted_confidence_score": predicted_confidence_score
+                                        "predicted_confidence_score": predicted_confidence_score,
+                                        "location": location
+
                                     }, outfile)
                                     outfile.write('\n')
 
@@ -292,20 +300,19 @@ class ConsumerThread:
 
                             # Add a delay (in milliseconds) to control the frame rate (optional)
                             # You can adjust it as needed, or remove it if real-time is desired
-                            if cv2.waitKey(1) & 0xFF == ord('q'):
-                                break
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                # Commit the Kafka consumer
+                    consumer.commit(asynchronous=False)
+                    msg_count = 0
+                    metadata_array = []
+                    msg_array = []
 
-                        # Commit the Kafka consumer
-                        consumer.commit(asynchronous=False)
-                        msg_count = 0
-                        metadata_array = []
-                        msg_array = []
-
-                    elif msg.error().code() == KafkaError._PARTITION_EOF:
-                        print('End of partition reached {0}/{1}'
-                              .format(msg.topic(), msg.partition()))
-                    else:
-                        print('Error occurred: {0}'.format(msg.error().str()))
+                elif msg.error().code() == KafkaError._PARTITION_EOF:
+                    print('End of partition reached {0}/{1}'
+                          .format(msg.topic(), msg.partition()))
+                else:
+                    print('Error occurred: {0}'.format(msg.error().str()))
 
         except KeyboardInterrupt:
             print("Detected Keyboard Interrupt. Quitting...")
