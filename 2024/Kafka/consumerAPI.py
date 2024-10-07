@@ -173,14 +173,10 @@
 
 
 import threading
-from confluent_kafka import Consumer, KafkaError, KafkaException
+from confluent_kafka import Consumer, KafkaError
 import cv2
-import numpy as np
 import json
-import requests
-from PIL import Image
 import time
-import torch
 from transformers import AutoImageProcessor, AutoModelForObjectDetection
 
 consumer_config = {
@@ -191,38 +187,14 @@ consumer_config = {
 }
 
 
-def draw_boxes(image, results):
-    for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
-        box = [round(i, 2) for i in box.tolist()]
-        predicted_label = label.item()
-        predicted_confidence_score = score.item()
-
-        start_point = (int(box[0]), int(box[1]))
-        end_point = (int(box[2]), int(box[3]))
-        color = (0, 255, 0)
-        center_point = (int((box[0] + box[2]) / 2), int((box[1] + box[3]) / 2))
-        print("Center of the bbox",center_point)
-        thickness = 2
-        cv2.rectangle(image, start_point, end_point, color, thickness)
-
-        label_text = f"""Label: {predicted_label}, Score: {
-            predicted_confidence_score:.2f}"""
-        cv2.putText(image, label_text, start_point,
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1, cv2.LINE_AA)
-
-    return image
-
-
 class ConsumerThread:
-    def __init__(self, config, topic, batch_size, model, processor, device):
+    def __init__(self, config, topic, batch_size):
         self.config = config
         self.topic = topic
         self.batch_size = batch_size
-        self.model: AutoModelForObjectDetection = model
-        self.processor = processor
-        self.device = device
 
     def read_data(self):
+        print('read_data called')
         consumer = Consumer(self.config)
         consumer.subscribe(self.topic)
         self.run(consumer, 0, [], [])
@@ -231,81 +203,27 @@ class ConsumerThread:
         try:
             while True:
                 msg = consumer.poll(0)
+                print(msg)
                 time.sleep(3)
                 if msg is None:
                     continue
 
                 elif msg.error() is None:
+                    print('Message received successfully')
                     bytes_arr = msg.value().decode("utf-8")
                     json_obj = json.loads(bytes_arr)
-                    # print(type(json_obj), json_obj)
-                    location = json_obj["location"]
-                    img_string = json_obj["frame"].encode("latin1")
-                    nparr = np.frombuffer(img_string, np.uint8)
-
-                    # Decode image
-                    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    msg_array.append(img)
-
-                    # Get metadata
+                    center = json_obj["center"]
+                    print(center)
                     frame_no = msg.timestamp()[1]
                     video_name = msg.headers()[0][1].decode("utf-8")
                     print(f"Frame number {frame_no}")
                     metadata_array.append((frame_no, video_name))
 
                     msg_count += 1
-                    if msg_count % self.batch_size == 0:
-                        for frame in msg_array:
-                            image = Image.fromarray(
-                                cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-                            inputs = self.processor(
-                                images=image, return_tensors="pt").to(self.device)
-                            outputs = self.model(**inputs)
-                            target_sizes = torch.tensor([image.size[::-1]])
 
-                            results = self.processor.post_process_object_detection(
-                                outputs, target_sizes=target_sizes, threshold=0.9)[0]
-                            print(results)
-                            with open("./json_output.jsonl", "a") as outfile:
-                                if len(results["scores"]) == 0:
-                                    json.dump({
-                                        "box": "None",
-                                        "frame_no": frame_no,
-                                        "video_name": video_name,
-                                        "label": "None",
-                                        "predicted_confidence_score": "None",
-                                        "location": location
-                                    }, outfile)
-                                    outfile.write('\n')
-
-                                for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
-                                    ### ---------------- All Detections happen here -------------------------------- ### 
-                                    box = [round(i, 2) for i in box.tolist()]
-                                    predicted_label = label.item()
-                                    predicted_confidence_score = score.item()
-                                    json.dump({
-                                        "box": box,
-                                        "frame_no": frame_no,
-                                        "video_name": video_name,
-                                        "label": predicted_label,
-                                        "predicted_confidence_score": predicted_confidence_score,
-                                        "location": location
-
-                                    }, outfile)
-                                    outfile.write('\n')
-
-                            annotated_img = draw_boxes(frame, results)
-
-                            cv2.imshow("Processed Frame", annotated_img)
-
-
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        break
-                # Commit the Kafka consumer
                     consumer.commit(asynchronous=False)
                     msg_count = 0
                     metadata_array = []
-                    msg_array = []
 
                 elif msg.error().code() == KafkaError._PARTITION_EOF:
                     print('End of partition reached {0}/{1}'
@@ -331,17 +249,6 @@ class ConsumerThread:
 
 
 if __name__ == "__main__":
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    topic = ["single_video_stream"]
-    processor = AutoImageProcessor.from_pretrained("sansh2356/DETR_finetune")
-    model = AutoModelForObjectDetection.from_pretrained(
-        "sansh2356/DETR_finetune")
-    model = model.to(device)
-    print(device)
-
-    print("model and processor loaded")
-    time.sleep(5)
-
     consumer_thread = ConsumerThread(
-        consumer_config, topic, 1, model, processor, device)
+        consumer_config, ["single_video_stream"], 1)
     consumer_thread.start(3)
