@@ -1,7 +1,7 @@
 from dronekit import connect,VehicleMode,LocationGlobal,Vehicle, mavutil
 import time
 from simple_pid import PID
-import pigpio
+
 import math
 from coordinate_conversion import calculate_gps_coordinates
 
@@ -175,3 +175,62 @@ def get_distance_metres(aLocation1, aLocation2):
     dlat = aLocation2.lat - aLocation1.lat
     dlong = aLocation2.lon - aLocation1.lon
     return math.sqrt((dlat*dlat) + (dlong*dlong)) * 1.113195e5
+
+def move_to_center_image_coords_with_current_loc(vehicle:Vehicle,x:int,y:int) -> None:
+    current_location = getCurrentLocation(vehicle)
+
+    p_lat,p_lon = calculate_gps_coordinates(current_location.lat,current_location.lon,current_location.alt,5.1,960,720,int(x),int(y),vehicle.heading)
+    predicted_coords = LocationGlobal(p_lat,p_lon)
+
+    moveToAlt(vehicle,p_lat,p_lon,5)
+    # vehicle.simple_goto(predicted_coords)
+
+def move_to_center_image_coords_with_custom_loc(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int) -> None:
+    p_lat,p_lon = calculate_gps_coordinates(lat,lon,alt,5.1,960,720,int(x),int(y),heading)
+    # predicted_coords = LocationGlobal(p_lat,p_lon)
+
+    moveToAlt(vehicle,p_lat,p_lon,5)
+    # vehicle.simple_goto(predicted_coords)
+
+
+
+def move_to_center_image_gps(vehicle:Vehicle,location:LocationGlobal) -> None:
+    
+    moveToAlt(vehicle,location.lat,location.lon,5)
+    # vehicle.simple_goto(predicted_coords)
+
+
+def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int,hotspots:list[LocationGlobal]) -> None:
+    vehicle.mode = GUIDED
+    vehicle.wait_for_mode(GUIDED)
+    print("Descending rel")
+    
+    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
+    
+
+    while(getCurrentLocation(vehicle).alt > 6 and get_distance_metres(getCurrentLocation(vehicle),LocationGlobal(lat,lon)) < 5):
+        time.sleep(1)
+    
+    #TAKE PHOTO
+    time.sleep(2)
+    print('release')
+    #SAVE COORDINATES
+    hotspots.append(LocationGlobal(lat,lon))
+
+    print("Moving to 15")
+    current_location = getCurrentLocation(vehicle)
+    moveToAlt(vehicle,current_location.lat,current_location.lon,15)
+    while(getCurrentLocation(vehicle).alt < 13):
+        time.sleep(1)
+
+def descendAndTakePhotoImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int,hotspots:list[LocationGlobal]) -> None:
+    
+    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
+
+    while(getCurrentLocation(vehicle).alt > 11):
+        time.sleep(1)
+    
+    #TAKE PHOTO
+    print("Taken PHOTO")
+    #SAVE COORDINATES
+    hotspots.append(LocationGlobal(lat,lon))

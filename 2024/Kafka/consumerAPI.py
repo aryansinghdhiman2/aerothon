@@ -178,6 +178,13 @@ import cv2
 import json
 import time
 from transformers import AutoImageProcessor, AutoModelForObjectDetection
+from drone_helper import connect_to_drone,descendAndReleaseImg,LocationGlobal,get_distance_metres,AUTO
+
+from classificationEnum import TARGET
+
+vehicle = connect_to_drone("tcp:localhost:5762")
+
+hotspots: list[LocationGlobal] = []
 
 consumer_config = {
     'bootstrap.servers': '127.0.0.1:9092',
@@ -224,6 +231,19 @@ class ConsumerThread:
                     consumer.commit(asynchronous=False)
                     msg_count = 0
                     metadata_array = []
+
+                    lat, lon, alt, heading = json_obj["location"]
+                    found_matching = False
+                    if(json_obj['type'] == TARGET):
+                        for hotspot in hotspots:
+                            if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 5):
+                                found_matching = True
+                                break
+                        
+                        if(not found_matching):
+                            descendAndReleaseImg(vehicle,center[0],center[1],lat,lon,alt,heading,hotspots)
+                            vehicle.mode = AUTO
+                        
 
                 elif msg.error().code() == KafkaError._PARTITION_EOF:
                     print('End of partition reached {0}/{1}'

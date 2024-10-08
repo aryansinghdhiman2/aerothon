@@ -8,6 +8,11 @@ from PIL import Image
 import json
 import time
 import torch
+from classificationEnum import HOTSPOT,TARGET,DET_OBJ
+from drone_helper import connect_to_drone,getCurrentLocation
+
+vehicle = connect_to_drone("tcp:localhost:5761")
+
 # Basic configuration for kafka producer
 
 producer_config = {
@@ -56,6 +61,9 @@ class ProducerThread:
         video_name = os.path.basename(video_path).split(".")[0]
         frame_no = 1
         while video.isOpened():
+            locationObj = getCurrentLocation(vehicle)
+            location = [locationObj.lat,locationObj.lon,locationObj.alt,vehicle.heading]
+
             _, frame = video.read()
             print(f"frame number done  === {frame_no}")
             image = Image.fromarray(
@@ -68,7 +76,7 @@ class ProducerThread:
             results = self.processor.post_process_object_detection(
                 outputs, target_sizes=target_sizes, threshold=0.9)[0]
             print(results)
-            location = ""
+
             center = (0,0)
             with open("./json_output.jsonl", "a") as outfile:
                 if len(results["scores"]) == 0:
@@ -112,18 +120,11 @@ class ProducerThread:
                     if cv2.waitKey(1) & 0xFF == ord('q'):
                         break
 
-            # print("frame Published to consumer")
-            # result = subprocess.run(
-            #     ["curl", "-s", "http://localhost:5000/location/"],
-            #     capture_output=True,
-            #     text=True
-            # )
-            # if result.returncode == 0:
-            #     location = json.loads(result.stdout)
-            # print("location recieved is ", location)
             print(results)
             message_value = json.dumps({
-                'center': center
+                'center': center,
+                'location': location,
+                'type' : TARGET
             }).encode('utf-8')
 
             if frame_no % 1 == 0:
