@@ -11,8 +11,9 @@ import torch
 from classificationEnum import HOTSPOT,TARGET,DET_OBJ
 from drone_helper import connect_to_drone,getCurrentLocation
 
-vehicle = connect_to_drone("tcp:localhost:5761")
+vehicle = connect_to_drone("tcp:localhost:5762")
 
+message_value:bytes = ''
 # Basic configuration for kafka producer
 
 producer_config = {
@@ -57,6 +58,8 @@ class ProducerThread:
         self.processor = processor
 
     def publishAndDetectFrame(self, video_path):
+        global message_value
+
         video = cv2.VideoCapture(video_path)
         video_name = os.path.basename(video_path).split(".")[0]
         frame_no = 1
@@ -114,6 +117,21 @@ class ProducerThread:
                     }, outfile)
                     outfile.write('\n')
 
+                    message_value = json.dumps({
+                        'center': center,
+                        'location': location,
+                        'type' : TARGET
+                    }).encode('utf-8')
+
+                    self.producer.produce(
+                        topic="single_video_stream",
+                        value=message_value,
+                        timestamp=frame_no,
+                        headers={
+                            "video_name": str.encode(video_name)
+                        }
+                    )
+                    
                     annotated_img = draw_boxes(frame, results)
 
                     cv2.imshow("Processed Frame", annotated_img)
@@ -121,22 +139,9 @@ class ProducerThread:
                         break
 
             print(results)
-            message_value = json.dumps({
-                'center': center,
-                'location': location,
-                'type' : TARGET
-            }).encode('utf-8')
 
-            if frame_no % 1 == 0:
-                self.producer.produce(
-                    topic="single_video_stream",
-                    value=message_value,
-                    timestamp=frame_no,
-                    headers={
-                        "video_name": str.encode(video_name)
-                    }
-                )
-                self.producer.poll(0.5)
+
+            self.producer.poll(0.5)
             time.sleep(0.1)
             frame_no += 1
         video.release()
