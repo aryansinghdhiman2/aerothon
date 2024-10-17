@@ -182,7 +182,7 @@ from drone_helper import connect_to_drone,descendAndReleaseImg,LocationGlobal,ge
 
 from classificationEnum import TARGET
 
-vehicle = connect_to_drone("tcp:localhost:5763")
+vehicle = connect_to_drone("tcp:10.42.0.1:10000")
 
 hotspots: list[LocationGlobal] = []
 

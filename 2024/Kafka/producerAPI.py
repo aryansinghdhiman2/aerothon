@@ -11,7 +11,7 @@ import torch
 from classificationEnum import HOTSPOT,TARGET,DET_OBJ
 from drone_helper import connect_to_drone,getCurrentLocation
 
-vehicle = connect_to_drone("tcp:localhost:5762")
+vehicle = connect_to_drone("tcp:10.42.0.1:11000")
 
 message_value:bytes = ''
 # Basic configuration for kafka producer
