@@ -214,8 +214,11 @@ def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:flo
     #TAKE PHOTO
     time.sleep(2)
     print('release')
+    for i in range(1,1000):
+        vehicle.channels.overrides = { '8' : 1100 }
     #SAVE COORDINATES
     hotspots.append(LocationGlobal(lat,lon))
+    time.sleep(2)
 
     print("Moving to 15")
     current_location = getCurrentLocation(vehicle)

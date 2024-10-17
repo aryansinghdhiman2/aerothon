@@ -211,7 +211,7 @@ class ConsumerThread:
             while True:
                 msg = consumer.poll(0)
                 print(msg)
-                time.sleep(3)
+                time.sleep(1)
                 if msg is None:
                     continue
 
@@ -236,7 +236,7 @@ class ConsumerThread:
                     found_matching = False
                     if(json_obj['type'] == TARGET):
                         for hotspot in hotspots:
-                            if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 5):
+                            if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 8):
                                 found_matching = True
                                 break
                         
