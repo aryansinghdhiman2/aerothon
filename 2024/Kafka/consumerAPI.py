@@ -182,7 +182,7 @@ from drone_helper import connect_to_drone,descendAndReleaseImg,LocationGlobal,ge
 
 from classificationEnum import TARGET
 
-vehicle = connect_to_drone("tcp:localhost:5762")
+vehicle = connect_to_drone("tcp:localhost:5763")
 
 hotspots: list[LocationGlobal] = []
 
@@ -220,7 +220,8 @@ class ConsumerThread:
                     bytes_arr = msg.value().decode("utf-8")
                     json_obj = json.loads(bytes_arr)
                     center = json_obj["center"]
-                    print(center)
+                    # print(center)
+                    print(json_obj)
                     frame_no = msg.timestamp()[1]
                     video_name = msg.headers()[0][1].decode("utf-8")
                     print(f"Frame number {frame_no}")
@@ -235,6 +236,7 @@ class ConsumerThread:
                     lat, lon, alt, heading = json_obj["location"]
                     found_matching = False
                     if(json_obj['type'] == TARGET):
+                        print("Target Found")
                         for hotspot in hotspots:
                             if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 8):
                                 found_matching = True
@@ -243,6 +245,8 @@ class ConsumerThread:
                         if(not found_matching):
                             descendAndReleaseImg(vehicle,center[0],center[1],lat,lon,alt,heading,hotspots)
                             vehicle.mode = AUTO
+                        else:
+                            print("Found Existing")
                         
 
                 elif msg.error().code() == KafkaError._PARTITION_EOF:

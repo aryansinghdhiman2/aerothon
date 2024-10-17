@@ -207,9 +207,10 @@ def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:flo
     
     move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
     
-
-    while(getCurrentLocation(vehicle).alt > 6 and get_distance_metres(getCurrentLocation(vehicle),LocationGlobal(lat,lon)) < 5):
+    location = getCurrentLocation(vehicle)
+    while(getCurrentLocation(vehicle).alt > 6 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
         time.sleep(1)
+        location = getCurrentLocation(vehicle)
     
     #TAKE PHOTO
     time.sleep(2)
