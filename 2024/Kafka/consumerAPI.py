@@ -178,7 +178,7 @@ import cv2
 import json
 import time
 from transformers import AutoImageProcessor, AutoModelForObjectDetection
-from drone_helper import connect_to_drone,descendAndReleaseImg,LocationGlobal,get_distance_metres,AUTO
+from drone_helper import connect_to_drone,descendAndReleaseImg,LocationGlobal,get_distance_metres,AUTO,GUIDED
 
 from classificationEnum import TARGET
 
@@ -235,18 +235,19 @@ class ConsumerThread:
 
                     lat, lon, alt, heading = json_obj["location"]
                     found_matching = False
-                    if(json_obj['type'] == TARGET):
-                        print("Target Found")
-                        for hotspot in hotspots:
-                            if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 8):
-                                found_matching = True
-                                break
-                        
-                        if(not found_matching):
-                            descendAndReleaseImg(vehicle,center[0],center[1],lat,lon,alt,heading,hotspots)
-                            vehicle.mode = AUTO
-                        else:
-                            print("Found Existing")
+                    if(vehicle.mode == AUTO or vehicle.mode == GUIDED):
+                        if(json_obj['type'] == TARGET):
+                            print("Target Found")
+                            for hotspot in hotspots:
+                                if(get_distance_metres(hotspot,LocationGlobal(lat,lon)) < 8):
+                                    found_matching = True
+                                    break
+                            
+                            if(not found_matching):
+                                descendAndReleaseImg(vehicle,center[0],center[1],lat,lon,alt,heading,hotspots)
+                                vehicle.mode = AUTO
+                            else:
+                                print("Found Existing")
                         
 
                 elif msg.error().code() == KafkaError._PARTITION_EOF:
