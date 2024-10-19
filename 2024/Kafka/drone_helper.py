@@ -215,9 +215,7 @@ def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:flo
     #TAKE PHOTO
     time.sleep(2)
     print('release')
-    for i in range(1,1000):
-        vehicle.channels.overrides = { '8' : 1100 }
-        # time.sleep(0.1)
+    vehicle._handler.master.set_servo(7,1100)
 
     time.sleep(2)
 
