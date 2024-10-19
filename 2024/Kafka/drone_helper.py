@@ -200,7 +200,7 @@ def move_to_center_image_gps(vehicle:Vehicle,location:LocationGlobal) -> None:
     # vehicle.simple_goto(predicted_coords)
 
 
-def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int,hotspots:list[LocationGlobal]) -> None:
+def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int) -> None:
     vehicle.mode = GUIDED
     vehicle.wait_for_mode(GUIDED)
     print("Descending rel")
@@ -217,8 +217,8 @@ def descendAndReleaseImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:flo
     print('release')
     for i in range(1,1000):
         vehicle.channels.overrides = { '8' : 1100 }
-    #SAVE COORDINATES
-    hotspots.append(LocationGlobal(lat,lon))
+        # time.sleep(0.1)
+
     time.sleep(2)
 
     print("Moving to 15")

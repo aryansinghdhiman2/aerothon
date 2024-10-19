@@ -2,7 +2,7 @@ import cv2
 import random
 import json
 import torch
-from drone_helper import connect_to_drone, descendAndReleaseImg, LocationGlobal, get_distance_metres, AUTO, GUIDED
+from drone_helper import connect_to_drone, descendAndReleaseImg, LocationGlobal, get_distance_metres, AUTO, GUIDED, Vehicle
 from classificationEnum import TARGET
 import os
 from classificationEnum import HOTSPOT, TARGET, DET_OBJ
@@ -10,9 +10,9 @@ from drone_helper import connect_to_drone, getCurrentLocation
 
 from ultralytics import YOLO
 
-vehicle = connect_to_drone("tcp:10.42.0.1:10000")
+vehicle:Vehicle = connect_to_drone("tcp:10.42.0.1:10000")
 
-hotspots: list[LocationGlobal] = []
+found_target = False
 
 
 def draw_boxes(image, results):
@@ -120,27 +120,12 @@ while True:
 
             if label == 0:
                 print('Target found')
-                json_obj = {
-                    "center": center,
-                    "location": location,
-                    "type": TARGET
-                }
-                lat, lon, alt, heading = json_obj["location"]
-                found_matching = False
-                if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
-                    if (json_obj['type'] == TARGET):
-                        print("Target Found")
-                        for hotspot in hotspots:
-                            if (get_distance_metres(hotspot, LocationGlobal(lat, lon)) < 8):
-                                found_matching = True
-                                break
+                lat, lon, alt, heading = location
 
-                        if (not found_matching):
-                            descendAndReleaseImg(
-                                vehicle, center[0], center[1], lat, lon, alt, heading, hotspots)
-                            vehicle.mode = AUTO
-                        else:
-                            print("Found Existing")
+                if ((vehicle.mode == AUTO or vehicle.mode == GUIDED) and (not found_target)):
+                    descendAndReleaseImg(vehicle, center[0], center[1], lat, lon, alt, heading)
+                    vehicle.mode = AUTO
+                    found_target = True
             elif label == 1:
                 json_obj = {
                     "center": center,
