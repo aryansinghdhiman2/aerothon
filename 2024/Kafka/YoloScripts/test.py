@@ -10,7 +10,7 @@ from drone_helper import connect_to_drone, getCurrentLocation
 
 from ultralytics import YOLO
 
-vehicle:Vehicle = connect_to_drone("tcp:10.42.0.1:10000")
+vehicle: Vehicle = connect_to_drone("tcp:10.42.0.1:10000")
 
 found_target = False
 
@@ -68,6 +68,7 @@ while True:
 
     results = model(frame, conf=0.5, iou=0.6)
     r = results[0]
+    conv_obj = {}
     obj = (json.loads(results[0].to_json()))
     if len(obj) > 0:
         conv_obj = {
@@ -82,6 +83,7 @@ while True:
             "scores": []
         }
     print(type(results), results)
+    results = conv_obj
     frame_no += 1
     center = (0, 0)
     with open("./json_output.jsonl", "a") as outfile:
@@ -118,15 +120,16 @@ while True:
             }, outfile)
             outfile.write('\n')
 
-            if label == 0:
+            if label == 1:
                 print('Target found')
                 lat, lon, alt, heading = location
 
                 if ((vehicle.mode == AUTO or vehicle.mode == GUIDED) and (not found_target)):
-                    descendAndReleaseImg(vehicle, center[0], center[1], lat, lon, alt, heading)
+                    descendAndReleaseImg(
+                        vehicle, center[0], center[1], lat, lon, alt, heading)
                     vehicle.mode = AUTO
                     found_target = True
-            elif label == 1:
+            elif label == 0:
                 json_obj = {
                     "center": center,
                     "location": location,
