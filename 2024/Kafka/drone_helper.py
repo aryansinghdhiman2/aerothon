@@ -189,7 +189,7 @@ def move_to_center_image_coords_with_custom_loc(vehicle:Vehicle,x:int,y:int,lat:
     p_lat,p_lon = calculate_gps_coordinates(lat,lon,alt,5.1,960,720,int(x),int(y),heading)
     # predicted_coords = LocationGlobal(p_lat,p_lon)
 
-    moveToAlt(vehicle,p_lat,p_lon,5)
+    moveToAlt(vehicle,p_lat,p_lon,alt)
     # vehicle.simple_goto(predicted_coords)
 
 
@@ -236,3 +236,34 @@ def descendAndTakePhotoImg(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:f
     print("Taken PHOTO")
     #SAVE COORDINATES
     hotspots.append(LocationGlobal(lat,lon))
+
+def goto_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int):
+    vehicle.mode = GUIDED
+    vehicle.wait_for_mode(GUIDED)
+    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
+
+    location = getCurrentLocation(vehicle)
+    while(getCurrentLocation(vehicle).alt < 13 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
+        time.sleep(1)
+        location = getCurrentLocation(vehicle)
+
+def align_at_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int):
+    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
+
+    time.sleep(2)
+    location = getCurrentLocation(vehicle)
+    while(getCurrentLocation(vehicle).alt > 6 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
+        time.sleep(1)
+        location = getCurrentLocation(vehicle)
+
+def drop_and_return_to_15(vehicle:Vehicle):
+    print('release')
+    vehicle._handler.master.set_servo(7,1100)
+
+    time.sleep(2)
+
+    print("Moving to 15")
+    current_location = getCurrentLocation(vehicle)
+    moveToAlt(vehicle,current_location.lat,current_location.lon,15)
+    while(getCurrentLocation(vehicle).alt < 13):
+        time.sleep(1)

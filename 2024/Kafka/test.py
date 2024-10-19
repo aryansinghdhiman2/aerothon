@@ -2,7 +2,7 @@ import cv2
 import random
 import json
 import torch
-from drone_helper import connect_to_drone, descendAndReleaseImg, LocationGlobal, get_distance_metres, AUTO, GUIDED, Vehicle
+from drone_helper import connect_to_drone, goto_center, AUTO, GUIDED, Vehicle,align_at_center,drop_and_return_to_15
 from classificationEnum import TARGET
 import os
 from classificationEnum import HOTSPOT, TARGET, DET_OBJ
@@ -125,10 +125,23 @@ while True:
                 lat, lon, alt, heading = location
 
                 if ((vehicle.mode == AUTO or vehicle.mode == GUIDED) and (not found_target)):
-                    descendAndReleaseImg(
-                        vehicle, center[0], center[1], lat, lon, alt, heading)
-                    vehicle.mode = AUTO
+                    goto_center(vehicle,center[0],center[1],lat,lon,15,heading)
+                    
+                    # get frame and use model to get center at 15 m
+                    # assign new center to the "center" variable
+
+                    align_at_center(vehicle,center[0],center[1],lat,lon,5,heading)
+
+                    # get frame and use model to get center at 5 m
+                    # assign new center to the "center" variable
+
+                    align_at_center(vehicle,center[0],center[1],lat,lon,5,heading)
+
+                    drop_and_return_to_15(vehicle)
+                    
                     found_target = True
+
+
             elif label == 0:
                 json_obj = {
                     "center": center,
