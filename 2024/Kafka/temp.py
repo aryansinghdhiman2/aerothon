@@ -11,6 +11,7 @@ from classificationEnum import TARGET
 # import os
 from classificationEnum import HOTSPOT, TARGET, DET_OBJ
 from drone_helper import connect_to_drone, getCurrentLocation
+import time
 
 # from ultralytics import YOLO
 
@@ -239,7 +240,7 @@ def run_tracker_in_thread(model_name, filename):
 
                         # get frame and use model to get center at 15 m
                         # assign new center to the "center" variable
-
+                        time.sleep(2)
                         align_at_center(
                             vehicle, center[0], center[1], lat, lon, 5, heading)
 
