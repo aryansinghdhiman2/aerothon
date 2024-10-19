@@ -19,6 +19,11 @@ DESCEND_SPEED:int = 1 #m/s
 hotspots:list[LocationGlobal] = []
 
 def_address = 'tcp:localhost:5763'
+
+image_height = 640
+image_width = 480
+focal_length = 3.04
+
 #DRONE
 def connect_to_drone(address:str) -> Vehicle:
     vehicle:Vehicle = connect(address)
@@ -179,14 +184,14 @@ def get_distance_metres(aLocation1, aLocation2):
 def move_to_center_image_coords_with_current_loc(vehicle:Vehicle,x:int,y:int) -> None:
     current_location = getCurrentLocation(vehicle)
 
-    p_lat,p_lon = calculate_gps_coordinates(current_location.lat,current_location.lon,current_location.alt,5.1,960,720,int(x),int(y),vehicle.heading)
+    p_lat,p_lon = calculate_gps_coordinates(current_location.lat,current_location.lon,current_location.alt,focal_length,image_width,image_height,int(x),int(y),vehicle.heading)
     predicted_coords = LocationGlobal(p_lat,p_lon)
 
     moveToAlt(vehicle,p_lat,p_lon,5)
     # vehicle.simple_goto(predicted_coords)
 
 def move_to_center_image_coords_with_custom_loc(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int) -> None:
-    p_lat,p_lon = calculate_gps_coordinates(lat,lon,alt,5.1,960,720,int(x),int(y),heading)
+    p_lat,p_lon = calculate_gps_coordinates(lat,lon,alt,focal_length,image_width,image_height,int(x),int(y),heading)
     # predicted_coords = LocationGlobal(p_lat,p_lon)
 
     moveToAlt(vehicle,p_lat,p_lon,alt)
