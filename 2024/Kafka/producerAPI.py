@@ -11,7 +11,8 @@ import torch
 from classificationEnum import HOTSPOT,TARGET,DET_OBJ
 from drone_helper import connect_to_drone,getCurrentLocation
 
-vehicle = connect_to_drone("tcp:10.42.0.1:11000")
+# vehicle = connect_to_drone("udpout:10.42.0.1:11000")
+vehicle = connect_to_drone("tcp:localhost:5762")
 
 message_value:bytes = ''
 # Basic configuration for kafka producer
@@ -96,6 +97,7 @@ class ProducerThread:
                 for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
                     ### ---------------- All Detections happen here -------------------------------- ###
                     box = [round(i, 2) for i in box.tolist()]
+                    # print(f"score: {type(score)} label: {type(label)}, box : {type(box)}")
                     print(box)
                     x_min, y_min, x_max, y_max = box
 
@@ -165,7 +167,7 @@ if __name__ == "__main__":
         "sansh2356/DETR_finetune")
     model = model.to(device)
     print(device)
-    video_dir = "../../../../FineTuned_DERtModel/anotted.mp4"
+    video_dir = "./Kafka/"
     video_paths = glob(video_dir + "*.mp4")
 
     producer_thread = ProducerThread(
