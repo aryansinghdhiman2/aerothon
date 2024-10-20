@@ -257,6 +257,10 @@ def align_at_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,he
 
     time.sleep(2)
     location = getCurrentLocation(vehicle)
+    moveToAlt(vehicle,location.lat,location.lon,5)
+    time.sleep(1)
+    location = getCurrentLocation(vehicle)
+
     while(getCurrentLocation(vehicle).alt > 6 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
         time.sleep(1)
         location = getCurrentLocation(vehicle)
