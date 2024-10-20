@@ -96,9 +96,8 @@ def run_tracker_in_thread(model_name, filename):
 
                 if label == 1:
                     print('Target found')
-                    lat, lon, alt, heading = location
                     # adjusting according to input resolution
-                    adjusted_center = [(center_x-640), -(center_y-480)]
+                    adjusted_center = [center_x, (center_y + 480)]
 
                     # check alignment request state
                     if (alignment_state <= 2):
