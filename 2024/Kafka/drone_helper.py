@@ -253,10 +253,14 @@ def goto_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,headin
         location = getCurrentLocation(vehicle)
 
 def align_at_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int):
-    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,alt,heading)
+    move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,15,heading)
 
     time.sleep(2)
     location = getCurrentLocation(vehicle)
+    moveToAlt(vehicle,location.lat,location.lon,5)
+    time.sleep(1)
+    location = getCurrentLocation(vehicle)
+
     while(getCurrentLocation(vehicle).alt > 6 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
         time.sleep(1)
         location = getCurrentLocation(vehicle)

@@ -1,3 +1,5 @@
+import socketio
+import time
 from ultralytics import YOLO
 import json
 import cv2
@@ -7,21 +9,36 @@ from classificationEnum import TARGET
 from classificationEnum import HOTSPOT, TARGET, DET_OBJ
 from drone_helper import connect_to_drone, getCurrentLocation
 import time
+from socketio.exceptions import TimeoutError
 
 
+alignment_flag = [True, False, False, False]
+alignment_state = 0
+# 0, 1, 2
+
+sio = socketio.SimpleClient()
+sio.connect('http://127.0.0.1:5000')
+
+
+def emit_alignment(alignment_state, location, center):
+    sio.emit("alignment", {"alignment_state": alignment_state,
+             "location": location, "center": center})
+
+
+# vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
 vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
 
-found_target = False
 
-
-MODEL_NAMES = ["../../../../YoloNew/best.pt"]
+MODEL_NAMES = ["./OptimizedWeights/best.pt"]
 SOURCES = ["rtsp://localhost:8554/cam"]
 
 
 def run_tracker_in_thread(model_name, filename):
-    global found_target
+    global alignment_state
+    global alignment_flag
     model = YOLO(model_name)
-    results = model.track(filename, save=True, stream=True, conf=0.85, iou=0.8)
+    results = model.track(filename, save=True,
+                          stream=True, conf=0.70, iou=0.65)
     locationObj = getCurrentLocation(vehicle)
     location = [locationObj.lat, locationObj.lon,
                 locationObj.alt, vehicle.heading]
@@ -29,7 +46,7 @@ def run_tracker_in_thread(model_name, filename):
     for r in results:
         obj = (json.loads(r.to_json()))
         im_array = r.plot()
-        cv2.namedWindow("YOlo detection", cv2.WINDOW_NORMAL)
+        cv2.namedWindow("Yolo detection", cv2.WINDOW_NORMAL)
         cv2.imshow("Yolo detection", im_array)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -76,30 +93,38 @@ def run_tracker_in_thread(model_name, filename):
                     "center": center
                 }, outfile)
                 outfile.write('\n')
+
                 if label == 1:
                     print('Target found')
                     lat, lon, alt, heading = location
+                    # adjusting according to input resolution
+                    adjusted_center = [(center_x-640), -(center_y-480)]
 
-                    if ((vehicle.mode == AUTO or vehicle.mode == GUIDED) and (not found_target)):
-                        goto_center(vehicle, center[0],
-                                    center[1], lat, lon, 15, heading)
-                        print('Fetching next frame')
+                    # check alignment request state
+                    if (alignment_state <= 2):
+                        try:
+                            event = sio.receive(timeout=0.5)
+                        except TimeoutError:
+                            pass
+                        else:
+                            alignment_state = event[1]
+                            alignment_flag[alignment_state] = True
+                            print('received event:', event[0], event[1])
 
-                        # get frame and use model to get center at 15 m
-                        # assign new center to the "center" variable
-                        time.sleep(2)
-                        align_at_center(
-                            vehicle, center[0], center[1], lat, lon, 5, heading)
+                        if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
+                            if (alignment_flag[0]):
+                                emit_alignment(alignment_state,
+                                               location, adjusted_center)
+                                alignment_flag[0] = False
+                            elif (alignment_flag[1]):
+                                emit_alignment(alignment_state,
+                                               location, adjusted_center)
+                                alignment_flag[1] = False
+                            elif (alignment_flag[2]):
+                                emit_alignment(alignment_state,
+                                               location, adjusted_center)
+                                alignment_flag[2] = False
 
-                        # get frame and use model to get center at 5 m
-                        # assign new center to the "center" variable
-
-                        # align_at_center(vehicle,center[0],center[1],lat,lon,5,heading)
-                        time.sleep(1)
-                        drop_and_return_to_15(vehicle)
-
-                        found_target = True
-                        vehicle.mode = AUTO
                 elif label == 0:
                     json_obj = {
                         "center": center,

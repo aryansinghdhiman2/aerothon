@@ -10,7 +10,7 @@ import time
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["../../../../NewVideos/output2.avi"]
+SOURCES = ["../../../../videos/New Project - Made with Clipchamp.mp4"]
 
 
 def run_tracker_in_thread(model_name, filename):
@@ -59,6 +59,7 @@ def run_tracker_in_thread(model_name, filename):
                 center_y = (y_min + y_max) / 2
 
                 center = (center_x, center_y)
+                
                 predicted_label = label
                 predicted_confidence_score = score
                 json.dump({
@@ -69,6 +70,7 @@ def run_tracker_in_thread(model_name, filename):
                 }, outfile)
                 outfile.write('\n')
                 if label == 1:
+                    print("CENTER",center)
                     print('Target found')
 
                 elif label == 0:
