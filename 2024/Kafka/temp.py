@@ -39,11 +39,11 @@ def run_tracker_in_thread(model_name, filename):
     model = YOLO(model_name)
     results = model.track(filename, save=True,
                           stream=True, conf=0.70, iou=0.65)
-    locationObj = getCurrentLocation(vehicle)
-    location = [locationObj.lat, locationObj.lon,
-                locationObj.alt, vehicle.heading]
 
     for r in results:
+        locationObj = getCurrentLocation(vehicle)
+        location = [locationObj.lat, locationObj.lon,
+                    locationObj.alt, vehicle.heading]
         obj = (json.loads(r.to_json()))
         im_array = r.plot()
         cv2.namedWindow("Yolo detection", cv2.WINDOW_NORMAL)
