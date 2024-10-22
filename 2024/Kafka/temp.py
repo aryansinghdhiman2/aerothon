@@ -25,13 +25,14 @@ def emit_alignment(alignment_state, location, center):
              "location": location, "center": center})
 
 
-# vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
-vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
+vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
+# vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["rtsp://localhost:8554/cam"]
+SOURCES = ["../../../../videos/din.mp4"]
 # SOURCES = ["./output16.avi"]
+
 
 def run_tracker_in_thread(model_name, filename):
     global alignment_state
@@ -46,15 +47,10 @@ def run_tracker_in_thread(model_name, filename):
         location = [locationObj.lat, locationObj.lon,
                     locationObj.alt, vehicle.heading]
         print(f"Frame count - {frame_cnt}")
-        print("Location is - :::: ",location)
-        frame_cnt+=1
+        print("Location is - :::: ", location)
+        frame_cnt += 1
         obj = (json.loads(r.to_json()))
         im_array = r.plot()
-        cv2.namedWindow("Yolo detection", cv2.WINDOW_NORMAL)
-        cv2.imshow("Yolo detection", im_array)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
         conv_obj = {}
         if len(obj) > 0:
             conv_obj = {
@@ -68,6 +64,27 @@ def run_tracker_in_thread(model_name, filename):
                 "labels": "none",
                 "scores": []
             }
+        draw_box = (0, 0)
+        if len(conv_obj["scores"]) > 0:
+            for box in conv_obj["boxes"]:
+                print(box)
+                x1 = box["x1"]
+                x2 = box["x2"]
+                y1 = box["y1"]
+                y2 = box["y2"]
+                draw_box = (((x1+x2)/2), ((y1+y2)/2))
+        cv2.namedWindow("Yolo detection", cv2.WINDOW_NORMAL)
+        cv2.circle(im_array, (int(draw_box[0]), int(
+            draw_box[1])), 2, thickness=1, color=(0, 0, 255))
+        cv2.putText(im_array, f"({draw_box[0]},{draw_box[1]})", (int(draw_box[0]), int(
+            draw_box[1])), fontScale=1, fontFace=cv2.FONT_HERSHEY_SIMPLEX, lineType=cv2.LINE_AA, color=(0, 255, 0))
+        cv2.putText(
+            im_array, f"lat and long({location[0]},{location[1]})", (640, 25), fontScale=1, fontFace=cv2.FONT_HERSHEY_SIMPLEX, lineType=cv2.LINE_AA, color=(0, 255, 0))
+        cv2.imshow("Yolo detection", im_array)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
         with open("./json_output.jsonl", "a") as outfile:
             res = conv_obj
             if len(res["scores"]) == 0:
@@ -102,7 +119,8 @@ def run_tracker_in_thread(model_name, filename):
                     print('Target found')
                     # adjusting according to input resolution
                     adjusted_center = [center_x, (480 - center_y)]
-                    print(f"Center {center}, adjusted_center {adjusted_center} location {location}")
+                    print(
+                        f"Center {center}, adjusted_center {adjusted_center} location {location}")
 
                     # check alignment request state
                     if (alignment_state <= 2):
