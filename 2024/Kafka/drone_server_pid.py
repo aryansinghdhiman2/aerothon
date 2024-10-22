@@ -29,42 +29,20 @@ def handle_first_alignment(args):
         time.sleep(2)
         socketio.emit(client_channel_str, 1)
     elif state == 1:
-        print("state 1")
-        align_at_center(vehicle, center[0],
-                        center[1], lat, lon, alt, heading)
-        time.sleep(2)
-        socketio.emit(client_channel_str, 2)
-    elif state == 2:
-        print("State 2")
-        move_to_center_image_coords_with_custom_loc(
-            vehicle, center[0], center[1], lat, lon, 15, heading)
-        time.sleep(2)
-        drop_and_return_to_15(vehicle)
-        socketio.emit(client_channel_str, 3)
-        vehicle.mode = AUTO
-
-@socketio.on("pid")
-def handle_pid(args):
-    lat, lon, alt, heading = args["location"]
-    delta_x, delta_y = args["center"]
-    state = args["alignment_state"]
-
-    if(abs(delta_x) > 25 or abs(delta_y) > 25):
-        move_to_center(vehicle,controller_15,delta_x,delta_y)
-    else:
-        socketio.emit(client_channel_str,2)
-        time.sleep(1)
-        print("going to 5 in server")
-        location = getCurrentLocation(vehicle)
-        moveToAlt(vehicle,location.lat,location.lon,5)
-
-        while(getCurrentLocation(vehicle).alt > 6):
+        if(abs(center[0]) > 25 or abs(center[1]) > 25):
+            move_to_center(vehicle,controller_15,center[0],center[1])
+        else:
+            socketio.emit(client_channel_str,2)
             time.sleep(1)
-        time.sleep(3)
-        drop_and_return_to_15(vehicle)
-        vehicle.mode = AUTO
-        
-    
+            print("going to 5 in server")
+            location = getCurrentLocation(vehicle)
+            moveToAlt(vehicle,location.lat,location.lon,5)
+
+            while(getCurrentLocation(vehicle).alt > 6):
+                time.sleep(1)
+            time.sleep(3)
+            drop_and_return_to_15(vehicle)
+            vehicle.mode = AUTO
 
 if __name__ == "__main__":
     socketio.run(app)
