@@ -31,11 +31,12 @@ vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
 SOURCES = ["rtsp://localhost:8554/cam"]
-
+# SOURCES = ["./output16.avi"]
 
 def run_tracker_in_thread(model_name, filename):
     global alignment_state
     global alignment_flag
+    frame_cnt = 0
     model = YOLO(model_name)
     results = model.track(filename, save=True,
                           stream=True, conf=0.70, iou=0.65)
@@ -44,6 +45,9 @@ def run_tracker_in_thread(model_name, filename):
         locationObj = getCurrentLocation(vehicle)
         location = [locationObj.lat, locationObj.lon,
                     locationObj.alt, vehicle.heading]
+        print(f"Frame count - {frame_cnt}")
+        print("Location is - :::: ",location)
+        frame_cnt+=1
         obj = (json.loads(r.to_json()))
         im_array = r.plot()
         cv2.namedWindow("Yolo detection", cv2.WINDOW_NORMAL)
@@ -97,7 +101,8 @@ def run_tracker_in_thread(model_name, filename):
                 if label == 1:
                     print('Target found')
                     # adjusting according to input resolution
-                    adjusted_center = [center_x, (center_y + 480)]
+                    adjusted_center = [center_x, (480 - center_y)]
+                    print(f"Center {center}, adjusted_center {adjusted_center} location {location}")
 
                     # check alignment request state
                     if (alignment_state <= 2):
@@ -112,14 +117,17 @@ def run_tracker_in_thread(model_name, filename):
 
                         if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
                             if (alignment_flag[0]):
+                                print("sent 0")
                                 emit_alignment(alignment_state,
                                                location, adjusted_center)
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
+                                print("sent 1")
                                 emit_alignment(alignment_state,
                                                location, adjusted_center)
                                 alignment_flag[1] = False
                             elif (alignment_flag[2]):
+                                print("sent 2")
                                 emit_alignment(alignment_state,
                                                location, adjusted_center)
                                 alignment_flag[2] = False

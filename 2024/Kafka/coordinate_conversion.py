@@ -30,5 +30,5 @@ def calculate_gps_coordinates(initial_latitude, initial_longitude, altitude_and_
 # Example usage
 
 if(__name__=="__main__"):
-    print(calculate_gps_coordinates(30.748021, 76.756599,15,3.04,640,480,320,240,180))
+    print(calculate_gps_coordinates(30.7481128, 76.7565859,15,3.04,640,480,365,196,70))
     pass
