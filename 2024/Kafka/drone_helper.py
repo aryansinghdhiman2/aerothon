@@ -59,6 +59,7 @@ def resume_mission(vehicle:Vehicle) -> None:
     vehicle.wait_for_mode(AUTO)
 
 def getCurrentLocation(vehicle:Vehicle) -> LocationGlobal:
+    print('Get current location called')
     return vehicle.location.global_relative_frame
 
 def sendRollAndPitch(vehicle:Vehicle,roll_val:float,pitch_val:float,descend_speed:float=0) -> None:
@@ -251,6 +252,7 @@ def goto_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,headin
     while(get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
         time.sleep(1)
         location = getCurrentLocation(vehicle)
+    time.sleep(10)
 
 def align_at_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,heading:int):
     move_to_center_image_coords_with_custom_loc(vehicle,x,y,lat,lon,15,heading)
@@ -258,12 +260,14 @@ def align_at_center(vehicle:Vehicle,x:int,y:int,lat:float,lon:float,alt:float,he
     time.sleep(2)
     location = getCurrentLocation(vehicle)
     moveToAlt(vehicle,location.lat,location.lon,5)
-    time.sleep(1)
+    print("GOing to 5")
+    time.sleep(10)
     location = getCurrentLocation(vehicle)
 
     while(getCurrentLocation(vehicle).alt > 6 or get_distance_metres(location,LocationGlobal(lat,lon)) > 10):
         time.sleep(1)
         location = getCurrentLocation(vehicle)
+    time.sleep(10)
 
 def drop_and_return_to_15(vehicle:Vehicle):
     print('release')

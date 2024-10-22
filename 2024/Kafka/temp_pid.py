@@ -141,13 +141,14 @@ def run_tracker_in_thread(model_name, filename):
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
                                 print("sent 1")
+                                adjusted_center = [320-center_x, 240-center_y]
                                 emit_alignment(alignment_state,
                                                location, adjusted_center)
-                                alignment_flag[1] = False
                             elif (alignment_flag[2]):
                                 print("sent 2")
-                                emit_alignment(alignment_state,
-                                               location, adjusted_center)
+                                alignment_flag[1] = False
+                                # emit_alignment(alignment_state,
+                                #                location, adjusted_center)
                                 alignment_flag[2] = False
 
                 elif label == 0:
