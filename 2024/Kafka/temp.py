@@ -32,7 +32,6 @@ def handler(msg):
     global alignment_flag
     alignment_state = msg
     alignment_flag[alignment_state] = True
-    raise int
 
 
 async def emit_alignment(alignment_state, location, center):
@@ -47,8 +46,8 @@ vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["../../../../videos/New Project - Made with Clipchamp.mp4"]
-# SOURCES = ["./output16.avi"]
+# SOURCES = ["../../../../videos/New Project - Made with Clipchamp.mp4"]
+SOURCES = ["./output16.avi"]
 
 
 async def run_tracker_in_thread(model_name, filename):
@@ -152,6 +151,7 @@ async def run_tracker_in_thread(model_name, filename):
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
                                 print("sent 1")
+                                adjusted_center = [center_x-320, 240-center_y]
                                 await emit_alignment(alignment_state,
                                                      location, adjusted_center)
 
