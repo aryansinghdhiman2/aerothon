@@ -143,15 +143,6 @@ async def run_tracker_in_thread(model_name, filename):
 
                     # check alignment request state
                     if (alignment_state <= 2):
-                        # try:
-                        #     event = sio.receive()
-                        # except TimeoutError:
-                        #     pass
-                        # else:
-                        #     alignment_state = event[1]
-                        #     alignment_flag[alignment_state] = True
-                        #     print('received event:', event[0], event[1])
-
                         if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
                             print("VEHICLE MODE", vehicle.mode)
                             if (alignment_flag[0]):
@@ -164,11 +155,11 @@ async def run_tracker_in_thread(model_name, filename):
                                 await emit_alignment(alignment_state,
                                                      location, adjusted_center)
 
-                                alignment_flag[1] = False
                             elif (alignment_flag[2]):
+                                alignment_flag[1] = False
                                 print("sent 2")
-                                await emit_alignment(alignment_state,
-                                                     location, adjusted_center)
+                                # await emit_alignment(alignment_state,
+                                #                      location, adjusted_center)
 
                                 alignment_flag[2] = False
 
