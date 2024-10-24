@@ -21,27 +21,24 @@ sio = socketio.AsyncClient()
 
 
 async def start_server():
-    await sio.connect('http://127.0.0.1:5000', namespaces='/')
+    await sio.connect('http://127.0.0.1:5000')
     print("Connected to server")
 
 
 @sio.on('requested_alignment_state')
-def handler(sid, msg):
+def handler(msg):
     print('received event:', "requested_alignment_state", msg)
     global alignment_state
     global alignment_flag
     alignment_state = msg
     alignment_flag[alignment_state] = True
-
-
-def callback():
-    print("CALLBACK CALLED")
+    raise int
 
 
 async def emit_alignment(alignment_state, location, center):
     print("EMIT ALIGNMENT CALLED")
     await sio.emit("alignment", {"alignment_state": alignment_state,
-                                 "location": location, "center": center}, callback=callback())
+                                 "location": location, "center": center})
     print("EMIT ENDED")
 
 
@@ -64,6 +61,7 @@ async def run_tracker_in_thread(model_name, filename):
                           stream=True, conf=0.70, iou=0.65)
 
     for r in results:
+        await asyncio.sleep(0)
         locationObj = getCurrentLocation(vehicle)
         location = [locationObj.lat, locationObj.lon,
                     locationObj.alt, vehicle.heading]
