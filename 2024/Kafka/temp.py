@@ -1,5 +1,6 @@
 import socketio
 import time
+import asyncio
 from ultralytics import YOLO
 import json
 import cv2
@@ -16,11 +17,25 @@ alignment_flag = [True, False, False, False]
 alignment_state = 0
 # 0, 1, 2
 
-sio = socketio.SimpleClient()
-sio.connect('http://127.0.0.1:5000')
+sio = socketio.AsyncSimpleClient()
 
 
-def emit_alignment(alignment_state, location, center):
+
+async def start_server():
+    await sio.connect('http://127.0.0.1:5000')
+    print("Connected to server")
+
+
+@sio.on('requested_alignment_state')
+def handler(sid, msg):
+    print('received event:', "requested_alignment_state", msg)
+    global alignment_state
+    global alignment_flag
+    alignment_state = msg
+    alignment_flag[alignment_state] = True
+
+async def emit_alignment(alignment_state, location, center):
+    print("EMIT ALIGNMENT CALLED")
     sio.emit("alignment", {"alignment_state": alignment_state,
              "location": location, "center": center})
 
@@ -30,11 +45,12 @@ vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["../../../../videos/din.mp4"]
+SOURCES = ["./output16.avi"]
 # SOURCES = ["./output16.avi"]
 
 
 def run_tracker_in_thread(model_name, filename):
+    asyncio.run(start_server())
     global alignment_state
     global alignment_flag
     frame_cnt = 0
@@ -124,30 +140,30 @@ def run_tracker_in_thread(model_name, filename):
 
                     # check alignment request state
                     if (alignment_state <= 2):
-                        try:
-                            event = sio.receive(timeout=0.5)
-                        except TimeoutError:
-                            pass
-                        else:
-                            alignment_state = event[1]
-                            alignment_flag[alignment_state] = True
-                            print('received event:', event[0], event[1])
+                        # try:
+                        #     event = sio.receive()
+                        # except TimeoutError:
+                        #     pass
+                        # else:
+                        #     alignment_state = event[1]
+                        #     alignment_flag[alignment_state] = True
+                        #     print('received event:', event[0], event[1])
 
                         if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
+                            print("VEHICLE MODE",vehicle.mode)
                             if (alignment_flag[0]):
                                 print("sent 0")
-                                emit_alignment(alignment_state,
-                                               location, adjusted_center)
+                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
                                 print("sent 1")
-                                emit_alignment(alignment_state,
-                                               location, adjusted_center)
+                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
+
                                 alignment_flag[1] = False
                             elif (alignment_flag[2]):
                                 print("sent 2")
-                                emit_alignment(alignment_state,
-                                               location, adjusted_center)
+                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
+
                                 alignment_flag[2] = False
 
                 elif label == 0:

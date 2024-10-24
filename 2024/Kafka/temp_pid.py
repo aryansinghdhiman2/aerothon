@@ -25,13 +25,13 @@ def emit_alignment(alignment_state, location, center):
              "location": location, "center": center})
 
 
-vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
-# vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
+# vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
+vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["../../../../videos/din.mp4"]
 # SOURCES = ["./output16.avi"]
+SOURCES = ["rtsp://localhost:8554/cam"]
 
 
 def run_tracker_in_thread(model_name, filename):
@@ -141,7 +141,7 @@ def run_tracker_in_thread(model_name, filename):
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
                                 print("sent 1")
-                                adjusted_center = [320-center_x, 240-center_y]
+                                adjusted_center = [center_x-320, 240-center_y]
                                 emit_alignment(alignment_state,
                                                location, adjusted_center)
                             elif (alignment_flag[2]):

@@ -20,6 +20,7 @@ def handle_my_custom_event(json):
 
 @socketio.on("alignment")
 def handle_first_alignment(args):
+    
     lat, lon, alt, heading = args["location"]
     center: list[int] = args["center"]
     state = args["alignment_state"]

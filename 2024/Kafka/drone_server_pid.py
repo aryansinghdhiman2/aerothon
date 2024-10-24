@@ -11,7 +11,7 @@ socketio = SocketIO(app)
 
 client_channel_str: str = "requested_alignment_state"
 
-controller_15 = configure_pid(-0.000375,-0.000375,1,1)
+controller_15 = configure_pid(-0.000046875,-0.000046875,0.7,0.7)
 
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
@@ -23,6 +23,7 @@ def handle_first_alignment(args):
     lat, lon, alt, heading = args["location"]
     center: list[int] = args["center"]
     state = args["alignment_state"]
+    print(f"args: {args}")
     if state == 0:
         print("state 0")
         goto_center(vehicle, center[0], center[1], lat, lon, 15, heading)
