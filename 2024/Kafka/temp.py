@@ -17,12 +17,11 @@ alignment_flag = [True, False, False, False]
 alignment_state = 0
 # 0, 1, 2
 
-sio = socketio.AsyncSimpleClient()
-
+sio = socketio.AsyncClient()
 
 
 async def start_server():
-    await sio.connect('http://127.0.0.1:5000')
+    await sio.connect('http://127.0.0.1:5000', namespaces='/')
     print("Connected to server")
 
 
@@ -34,10 +33,16 @@ def handler(sid, msg):
     alignment_state = msg
     alignment_flag[alignment_state] = True
 
+
+def callback():
+    print("CALLBACK CALLED")
+
+
 async def emit_alignment(alignment_state, location, center):
     print("EMIT ALIGNMENT CALLED")
-    sio.emit("alignment", {"alignment_state": alignment_state,
-             "location": location, "center": center})
+    await sio.emit("alignment", {"alignment_state": alignment_state,
+                                 "location": location, "center": center}, callback=callback())
+    print("EMIT ENDED")
 
 
 vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
@@ -45,12 +50,12 @@ vehicle: Vehicle = connect_to_drone("tcp:localhost:5762")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
-SOURCES = ["./output16.avi"]
+SOURCES = ["../../../../videos/New Project - Made with Clipchamp.mp4"]
 # SOURCES = ["./output16.avi"]
 
 
-def run_tracker_in_thread(model_name, filename):
-    asyncio.run(start_server())
+async def run_tracker_in_thread(model_name, filename):
+    await start_server()
     global alignment_state
     global alignment_flag
     frame_cnt = 0
@@ -150,19 +155,22 @@ def run_tracker_in_thread(model_name, filename):
                         #     print('received event:', event[0], event[1])
 
                         if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
-                            print("VEHICLE MODE",vehicle.mode)
+                            print("VEHICLE MODE", vehicle.mode)
                             if (alignment_flag[0]):
                                 print("sent 0")
-                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
+                                await emit_alignment(alignment_state,
+                                                     location, adjusted_center)
                                 alignment_flag[0] = False
                             elif (alignment_flag[1]):
                                 print("sent 1")
-                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
+                                await emit_alignment(alignment_state,
+                                                     location, adjusted_center)
 
                                 alignment_flag[1] = False
                             elif (alignment_flag[2]):
                                 print("sent 2")
-                                asyncio.run(emit_alignment(alignment_state,location, adjusted_center))
+                                await emit_alignment(alignment_state,
+                                                     location, adjusted_center)
 
                                 alignment_flag[2] = False
 
@@ -178,14 +186,21 @@ def run_tracker_in_thread(model_name, filename):
         pass
 
 
-tracker_threads = []
-for video_file, model_name in zip(SOURCES, MODEL_NAMES):
-    thread = threading.Thread(target=run_tracker_in_thread, args=(
-        model_name, video_file), daemon=True)
-    tracker_threads.append(thread)
-    thread.start()
+async def main():
+    # tracker_threads = []
+    for video_file, model_name in zip(SOURCES, MODEL_NAMES):
+        await run_tracker_in_thread(model_name, video_file)
+        # thread = threading.Thread(target=run_tracker_in_thread, args=(
+        #     model_name, video_file), daemon=True)
+        # tracker_threads.append(thread)
+        # thread.start()
 
-for thread in tracker_threads:
-    thread.join()
+    # for thread in tracker_threads:
+    #     thread.join()
 
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.close()

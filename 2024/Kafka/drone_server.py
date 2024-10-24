@@ -13,13 +13,14 @@ client_channel_str: str = "requested_alignment_state"
 
 controller_15 = configure_pid(-0.000375,-0.000375,1,1)
 
-@socketio.on("drone_data")
+@socketio.on("drone_data",namespace='/')
 def handle_my_custom_event(json):
     print(str(json))
 
 
-@socketio.on("alignment")
+@socketio.on("alignment",namespace='/')
 def handle_first_alignment(args):
+    print('hjbnksf')
     
     lat, lon, alt, heading = args["location"]
     center: list[int] = args["center"]
