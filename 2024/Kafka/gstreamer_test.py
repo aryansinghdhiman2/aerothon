@@ -1,7 +1,7 @@
 import cv2
-
+# import sys
 # Open the default camera
-cam = cv2.VideoCapture("rtspsrc location=rtsp://10.42.0.1:8554/cam latency=0 protocols=tcp ! decodebin ! videoconvert ! appsink",cv2.CAP_GSTREAMER)
+cam = cv2.VideoCapture("rtspsrc location=rtsp://10.42.0.1:8554/cam latency=0 protocols=tcp ! decodebin ! videoconvert ! appsink drop=1 max-buffers=5 max-bytes=1843488",cv2.CAP_GSTREAMER)
 
 # print(cam.getBackendName())
 
@@ -12,6 +12,7 @@ frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 while True:
     ret, frame = cam.read()
+    # print(sys.getsizeof(frame))
 
 
 
