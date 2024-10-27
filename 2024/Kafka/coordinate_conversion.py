@@ -1,5 +1,12 @@
 import math
 
+image_height = 640
+image_width = 480
+# Converted to meters
+focal_length = 3.04 / 1000 
+sensor_width = 3.68 / 1000
+sensor_height = 2.76 / 1000
+
 def calculate_gps_coordinates(initial_latitude, initial_longitude, altitude_and_sensor_height, focal_length, image_width, image_height, target_pixel_x, target_pixel_y, veh_heading):
     # Assuming heading angle is 0 (North-facing camera)
     heading_angle = veh_heading
@@ -9,6 +16,7 @@ def calculate_gps_coordinates(initial_latitude, initial_longitude, altitude_and_
 
     # Calculate Ground Sample Distance (GSD)
     gsd = (altitude_and_sensor_height) / (focal_length * image_height)
+
 
     # Convert pixel coordinates to meters
     displacement_x = (target_pixel_x - image_width / 2) * gsd
@@ -29,6 +37,28 @@ def calculate_gps_coordinates(initial_latitude, initial_longitude, altitude_and_
     return new_latitude, new_longitude
 # Example usage
 
+def calculate_body_ned_coordinates(altitude,heading,x,y):
+    gsd_y = (altitude * sensor_height) / ( focal_length * image_height )
+    gsd_x = (altitude * sensor_width) / ( focal_length * image_width )
+
+    # print(gsd_x,gsd_y)
+
+    gsd = min(gsd_x,gsd_y) / 2
+
+    x_meters = gsd * x
+    y_meters = gsd * y
+
+    # print(x_meters,y_meters)
+
+    heading_rads = math.radians(heading)
+
+    x_ned = x_meters * math.cos(heading_rads) + y_meters * math.sin(heading_rads)
+    y_ned = -x_meters * math.sin(heading_rads) + y_meters * math.cos(heading_rads)
+
+    return -y_ned,x_ned
+
 if(__name__=="__main__"):
-    print(calculate_gps_coordinates(30.7481128, 76.7565859,15,3.04,640,480,365,196,70))
+    # print(calculate_gps_coordinates(30.7481128, 76.7565859,15,3.04 / 1000,640,480,365,196,70))
+    # print(calculate_body_ned_coordinates(15,90,0,240))
+    print([i for i in calculate_body_ned_coordinates(15,90,0,240)])
     pass

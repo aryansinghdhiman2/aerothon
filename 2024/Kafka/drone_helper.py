@@ -3,7 +3,8 @@ import time
 from simple_pid import PID
 
 import math
-from coordinate_conversion import calculate_gps_coordinates
+from coordinate_conversion import calculate_gps_coordinates,calculate_body_ned_coordinates
+from pymavlink.dialects.v10.common import MAV_FRAME_BODY_NED
 
 GUIDED = VehicleMode("GUIDED")
 AUTO = VehicleMode("AUTO")
@@ -22,7 +23,11 @@ def_address = 'tcp:localhost:5763'
 
 image_height = 640
 image_width = 480
-focal_length = 3.04
+# Converted to meters
+focal_length = 3.04 / 1000 
+sensor_width = 3.68 / 1000
+sensor_height = 2.76 / 1000
+
 
 #DRONE
 def connect_to_drone(address:str) -> Vehicle:
@@ -280,3 +285,18 @@ def drop_and_return_to_15(vehicle:Vehicle):
     moveToAlt(vehicle,current_location.lat,current_location.lon,15)
     while(getCurrentLocation(vehicle).alt < 13):
         time.sleep(1)
+
+
+def goto_center_body_ned(vehicle:Vehicle,altitude,heading,x,y):
+    x,y = calculate_body_ned_coordinates(altitude,heading,x,y)
+    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+    0,
+    0, 0,
+    MAV_FRAME_BODY_NED,  
+    0b0000000000000000,
+    x, y, 0,
+    0, 0,0,
+    0, 0, 0,
+    0, 0)
+    vehicle.send_mavlink(msg)
+    time.sleep(5)
