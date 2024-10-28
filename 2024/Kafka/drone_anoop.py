@@ -20,7 +20,7 @@ sio = socketio.AsyncClient()
 
 
 async def start_server():
-    await sio.connect('http://127.0.0.1:5000')
+    await sio.connect('http://10.42.0.55:5000')
     print("Connected to server")
 
 
@@ -33,9 +33,9 @@ def handler(msg):
     alignment_flag[alignment_state] = True
 
 
-async def emit_alignment(alignment_state,location, center):
+async def emit_alignment(location, center):
     print("EMIT ALIGNMENT CALLED")
-    await sio.emit("alignment", {"alignment_state":alignment_state,
+    await sio.emit("alignment", {
                                  "location": location, "center": center})
     print("EMIT ENDED")
 
@@ -159,26 +159,26 @@ async def run_tracker_in_thread(model_name, filename):
                         adjusted_center = [center_x-320, 240-center_y]
                         print(
                             f"Center {center}, adjusted_center {adjusted_center} location {location}")
-                        # await emit_alignment(location,adjusted_center)
+                        await emit_alignment(location,adjusted_center)
                         # check alignment request state
-                        if (alignment_state <= 2):
-                            if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
-                                print("VEHICLE MODE", vehicle.mode)
-                                if (alignment_flag[0]):
-                                    print("sent 0")
-                                    await emit_alignment(alignment_state,
-                                                        location, adjusted_center)
-                                    alignment_flag[0] = False
-                                elif (alignment_flag[1]):
-                                    print("sent 1")
-                                    await emit_alignment(alignment_state,
-                                                        location, adjusted_center)
+                        # if (alignment_state <= 2):
+                        #     if (vehicle.mode == AUTO or vehicle.mode == GUIDED):
+                        #         print("VEHICLE MODE", vehicle.mode)
+                        #         if (alignment_flag[0]):
+                        #             print("sent 0")
+                        #             await emit_alignment(alignment_state,
+                        #                                 location, adjusted_center)
+                        #             alignment_flag[0] = False
+                        #         elif (alignment_flag[1]):
+                        #             print("sent 1")
+                        #             await emit_alignment(alignment_state,
+                        #                                 location, adjusted_center)
 
-                                elif (alignment_flag[2]):
-                                    alignment_flag[1] = False
-                                    print("sent 2")
+                        #         elif (alignment_flag[2]):
+                        #             alignment_flag[1] = False
+                        #             print("sent 2")
 
-                                    alignment_flag[2] = False
+                        #             alignment_flag[2] = False
 
                     elif label == 0:
                         json_obj = {

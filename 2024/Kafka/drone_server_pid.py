@@ -3,6 +3,8 @@ from flask_socketio import SocketIO
 import time
 from drone_helper import connect_to_drone, Vehicle, goto_center, align_at_center, move_to_center_image_coords_with_custom_loc, drop_and_return_to_15, AUTO, configure_pid, move_to_center,getCurrentLocation,moveToAlt,get_distance_metres,LocationGlobal,drop_and_return_to_15,GUIDED,goto_center_body_ned
 
+from drone_helper import connect_to_drone, Vehicle, goto_center, align_at_center, move_to_center_image_coords_with_custom_loc, drop_and_return_to_15, AUTO, configure_pid, move_to_center,getCurrentLocation,moveToAlt,get_distance_metres,LocationGlobal,drop_and_return_to_15,GUIDED,goto_center_body_ned
+
 
 # vehicle: Vehicle = connect_to_drone("tcp:172.24.240.1:5763")
 vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:11000")
@@ -12,7 +14,7 @@ socketio = SocketIO(app)
 
 client_channel_str: str = "requested_alignment_state"
 
-controller_15 = configure_pid(-0.000046875,-0.000046875,0.7,0.7)
+controller_15 = configure_pid((-0.0000125390625),(-0.0000125390625),0.6,0.6)
 
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
@@ -22,7 +24,7 @@ def handle_my_custom_event(json):
 @socketio.on("alignment")
 def handle_first_alignment(args):
     if(vehicle.mode == GUIDED or vehicle.mode == AUTO):
-        vehicle.mode = GUIDED
+
 
         lat, lon, alt, heading = args["location"]
         center: list[int] = args["center"]
@@ -30,11 +32,13 @@ def handle_first_alignment(args):
         print(f"args: {args}")
         if state == 0:
             print("state 0")
+            vehicle.mode = GUIDED
             goto_center_body_ned(vehicle,alt,heading,center[0],center[1])
             time.sleep(2)
             socketio.emit(client_channel_str, 1)
         elif state == 1:
-            if(abs(center[0]) > 25 or abs(center[1]) > 25):
+            if(abs(center[0]) > 10 or abs(center[1]) > 10):
+                vehicle.mode = GUIDED
                 move_to_center(vehicle,controller_15,center[0],center[1])
             else:
                 socketio.emit(client_channel_str,2)
@@ -43,6 +47,11 @@ def handle_first_alignment(args):
                 location = getCurrentLocation(vehicle)
                 moveToAlt(vehicle,location.lat,location.lon,5)
 
+                while(getCurrentLocation(vehicle).alt > 6):
+                    time.sleep(1)
+                time.sleep(3)
+                drop_and_return_to_15(vehicle)
+                vehicle.mode = AUTO
                 while(getCurrentLocation(vehicle).alt > 6):
                     time.sleep(1)
                 time.sleep(3)

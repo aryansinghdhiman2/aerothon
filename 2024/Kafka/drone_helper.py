@@ -21,8 +21,8 @@ hotspots:list[LocationGlobal] = []
 
 def_address = 'tcp:localhost:5763'
 
-image_height = 640
-image_width = 480
+image_height = 480
+image_width = 640
 # Converted to meters
 focal_length = 3.04 / 1000 
 sensor_width = 3.68 / 1000
@@ -293,7 +293,7 @@ def goto_center_body_ned(vehicle:Vehicle,altitude,heading,x,y):
     0,
     0, 0,
     MAV_FRAME_BODY_NED,  
-    0b0000000000000000,
+    0b0000011111111100,
     x, y, 0,
     0, 0,0,
     0, 0, 0,
