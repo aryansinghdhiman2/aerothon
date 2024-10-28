@@ -3,9 +3,6 @@ from flask_socketio import SocketIO
 import time
 from drone_helper import connect_to_drone, Vehicle, goto_center, align_at_center, move_to_center_image_coords_with_custom_loc, drop_and_return_to_15, AUTO, configure_pid, move_to_center,getCurrentLocation,moveToAlt,get_distance_metres,LocationGlobal,drop_and_return_to_15,GUIDED,goto_center_body_ned
 
-from drone_helper import connect_to_drone, Vehicle, goto_center, align_at_center, move_to_center_image_coords_with_custom_loc, drop_and_return_to_15, AUTO, configure_pid, move_to_center,getCurrentLocation,moveToAlt,get_distance_metres,LocationGlobal,drop_and_return_to_15,GUIDED,goto_center_body_ned
-
-
 # vehicle: Vehicle = connect_to_drone("tcp:172.24.240.1:5763")
 vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:11000")
 
