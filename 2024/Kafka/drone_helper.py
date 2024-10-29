@@ -293,7 +293,7 @@ def goto_center_body_ned(vehicle:Vehicle,altitude,heading,x,y):
     0,
     0, 0,
     MAV_FRAME_BODY_NED,  
-    0b0000000000000000,
+    0b0000011111111100,
     x, y, 0,
     0, 0,0,
     0, 0, 0,
