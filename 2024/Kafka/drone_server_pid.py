@@ -13,6 +13,8 @@ client_channel_str: str = "requested_alignment_state"
 
 controller_15 = configure_pid((-0.0000125390625),(-0.0000125390625),0.6,0.6)
 
+frame_cnt = 0
+
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
     print(str(json))
@@ -21,11 +23,9 @@ def handle_my_custom_event(json):
 @socketio.on("alignment")
 def handle_first_alignment(args):
     if(vehicle.mode == GUIDED or vehicle.mode == AUTO):
-
-
         lat, lon, alt, heading = args["location"]
         center: list[int] = args["center"]
-        state = args["alignment_state"]
+        state:int = args["alignment_state"]
         print(f"args: {args}")
         if state == 0:
             print("state 0")
@@ -34,26 +34,25 @@ def handle_first_alignment(args):
             time.sleep(2)
             socketio.emit(client_channel_str, 1)
         elif state == 1:
+            vehicle.mode = GUIDED
             if(abs(center[0]) > 10 or abs(center[1]) > 10):
-                vehicle.mode = GUIDED
                 move_to_center(vehicle,controller_15,center[0],center[1])
             else:
-                socketio.emit(client_channel_str,2)
-                time.sleep(1)
-                print("going to 5 in server")
-                location = getCurrentLocation(vehicle)
-                moveToAlt(vehicle,location.lat,location.lon,5)
+                if(frame_cnt < 10):
+                    frame_cnt+=1
+                    move_to_center(vehicle,controller_15,center[0],center[1])
+                else:
+                    socketio.emit(client_channel_str,2)
+                    time.sleep(1)
+                    print("going to 5 in server")
+                    location = getCurrentLocation(vehicle)
+                    moveToAlt(vehicle,location.lat,location.lon,5)
 
-                while(getCurrentLocation(vehicle).alt > 6):
-                    time.sleep(1)
-                time.sleep(3)
-                drop_and_return_to_15(vehicle)
-                vehicle.mode = AUTO
-                while(getCurrentLocation(vehicle).alt > 6):
-                    time.sleep(1)
-                time.sleep(3)
-                drop_and_return_to_15(vehicle)
-                vehicle.mode = AUTO
+                    while(getCurrentLocation(vehicle).alt > 6):
+                        time.sleep(1)
+                    time.sleep(3)
+                    drop_and_return_to_15(vehicle)
+                    vehicle.mode = AUTO
 
 if __name__ == "__main__":
     socketio.run(app)

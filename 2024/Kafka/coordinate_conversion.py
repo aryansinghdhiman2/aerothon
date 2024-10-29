@@ -57,8 +57,21 @@ def calculate_body_ned_coordinates(altitude,heading,x,y):
 
     return -y_ned,x_ned
 
+def calculate_body_frd_coordinates(altitude,heading,x,y):
+    gsd_y = (altitude * sensor_height) / ( focal_length * image_height )
+    gsd_x = (altitude * sensor_width) / ( focal_length * image_width )
+
+    # print(gsd_x,gsd_y)
+
+    gsd = min(gsd_x,gsd_y) / 2
+
+    x_meters = gsd * x
+    y_meters = gsd * y
+    
+    return y_meters,x_meters
+
 if(__name__=="__main__"):
     # print(calculate_gps_coordinates(30.7481128, 76.7565859,15,3.04 / 1000,640,480,365,196,70))
     # print(calculate_body_ned_coordinates(15,90,0,240))
-    print([i for i in calculate_body_ned_coordinates(15,90,0,240)])
+    print([i for i in calculate_body_frd_coordinates(15,90,0,240)])
     pass
