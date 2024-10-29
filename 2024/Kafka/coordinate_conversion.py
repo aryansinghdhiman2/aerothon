@@ -1,7 +1,7 @@
 import math
 
-image_height = 640
-image_width = 480
+image_height = 480
+image_width = 640
 # Converted to meters
 focal_length = 3.04 / 1000 
 sensor_width = 3.68 / 1000
