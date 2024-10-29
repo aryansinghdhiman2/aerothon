@@ -3,8 +3,8 @@ import time
 from simple_pid import PID
 
 import math
-from coordinate_conversion import calculate_gps_coordinates,calculate_body_ned_coordinates
-from pymavlink.dialects.v10.common import MAV_FRAME_BODY_NED
+from coordinate_conversion import calculate_gps_coordinates,calculate_body_frd_coordinates
+from pymavlink.dialects.v10.common import MAV_FRAME_BODY_OFFSET_NED
 
 GUIDED = VehicleMode("GUIDED")
 AUTO = VehicleMode("AUTO")
@@ -64,7 +64,6 @@ def resume_mission(vehicle:Vehicle) -> None:
     vehicle.wait_for_mode(AUTO)
 
 def getCurrentLocation(vehicle:Vehicle) -> LocationGlobal:
-    print('Get current location called')
     return vehicle.location.global_relative_frame
 
 def sendRollAndPitch(vehicle:Vehicle,roll_val:float,pitch_val:float,descend_speed:float=0) -> None:
@@ -288,11 +287,11 @@ def drop_and_return_to_15(vehicle:Vehicle):
 
 
 def goto_center_body_ned(vehicle:Vehicle,altitude,heading,x,y):
-    x,y = calculate_body_ned_coordinates(altitude,heading,x,y)
+    x,y = calculate_body_frd_coordinates(altitude,heading,x,y)
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
     0,
     0, 0,
-    MAV_FRAME_BODY_NED,  
+    MAV_FRAME_BODY_OFFSET_NED,  
     0b0000011111111100,
     x, y, 0,
     0, 0,0,
