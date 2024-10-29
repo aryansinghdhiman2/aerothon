@@ -33,15 +33,15 @@ def handler(msg):
     alignment_flag[alignment_state] = True
 
 
-async def emit_alignment(alignment_state,location, center):
+async def emit_alignment(alignment_state, location, center):
     print("EMIT ALIGNMENT CALLED")
-    await sio.emit("alignment", {"alignment_state":alignment_state,
+    await sio.emit("alignment", {"alignment_state": alignment_state,
                                  "location": location, "center": center})
     print("EMIT ENDED")
 
 
-# vehicle: Vehicle = connect_to_drone("tcp:172.24.240.1:5762")
-vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
+vehicle: Vehicle = connect_to_drone("tcp:172.24.240.1:5762")
+# vehicle: Vehicle = connect_to_drone("udpout:10.42.0.1:10000")
 
 
 MODEL_NAMES = ["./OptimizedWeights/best.pt"]
@@ -55,10 +55,14 @@ async def run_tracker_in_thread(model_name, filename):
     global alignment_flag
     frame_cnt = 0
     # cam = cv2.VideoCapture("rtspsrc location=rtsp://10.42.0.1:8554/cam latency=0 protocols=tcp ! decodebin ! videoconvert ! appsink drop=1 max-buffers=5 max-bytes=1843488", cv2.CAP_GSTREAMER)
-    cam = cv2.VideoCapture("rtspsrc location=rtsp://172.24.240.1:8554/cam latency=0 protocols=tcp ! decodebin ! videoconvert ! appsink drop=1 max-buffers=5 max-bytes=1843488", cv2.CAP_GSTREAMER)
-    # cam = cv2.VideoCapture("filesrc location=/mnt/c/Users/91798/Desktop/test_yolo/aerothon_repo/aerothon/2024/Kafka/a.mp4 ! decodebin ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
+    # cam = cv2.VideoCapture(
+    #     "rtspsrc location=rtsp://172.24.240.1:8554/cam latency=0 protocols=tcp ! decodebin ! videoconvert ! appsink drop=1 max-buffers=5 max-bytes=1843488", cv2.CAP_GSTREAMER)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('./TestResults/output.avi',
+                          fourcc, 20.0, (640,  480))
+    cam = cv2.VideoCapture("filesrc location=/mnt/c/Users/91798/Desktop/test_yolo/aerothon_repo/aerothon/2024/Kafka/output9.avi ! decodebin ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
     # time.sleep(3)
-    model = YOLO(model_name) 
+    model = YOLO(model_name)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     model = model.to(device)
@@ -75,8 +79,8 @@ async def run_tracker_in_thread(model_name, filename):
             print("Failed to grab frame.")
             break
 
-        results = model(frame,conf=0.75, iou=0.70)  
-        annotated_frame = results[0].plot()  
+        results = model(frame, conf=0.75, iou=0.70)
+        annotated_frame = results[0].plot()
         for r in results:
             await asyncio.sleep(0)
             locationObj = getCurrentLocation(vehicle)
@@ -117,9 +121,10 @@ async def run_tracker_in_thread(model_name, filename):
             cv2.putText(
                 annotated_frame, f"lat and long({location[0]},{location[1]})", (640, 25), fontScale=1, fontFace=cv2.FONT_HERSHEY_SIMPLEX, lineType=cv2.LINE_AA, color=(0, 255, 0))
             cv2.imshow("Yolo detection", annotated_frame)
+            out.write(annotated_frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+                return
 
             # print("printing")
             with open("./json_output.jsonl", "a") as outfile:
@@ -135,7 +140,7 @@ async def run_tracker_in_thread(model_name, filename):
 
                 for score, label, box in zip(res["scores"], res["labels"], res["boxes"]):
                     box = (box['x1'], box['y1'],
-                        box['x2'], box['y2'])
+                           box['x2'], box['y2'])
 
                     x_min, y_min, x_max, y_max = box
                     center_x = (x_min + x_max) / 2
@@ -167,12 +172,12 @@ async def run_tracker_in_thread(model_name, filename):
                                 if (alignment_flag[0]):
                                     print("sent 0")
                                     await emit_alignment(alignment_state,
-                                                        location, adjusted_center)
+                                                         location, adjusted_center)
                                     alignment_flag[0] = False
                                 elif (alignment_flag[1]):
                                     print("sent 1")
                                     await emit_alignment(alignment_state,
-                                                        location, adjusted_center)
+                                                         location, adjusted_center)
 
                                 elif (alignment_flag[2]):
                                     alignment_flag[1] = False
@@ -190,8 +195,6 @@ async def run_tracker_in_thread(model_name, filename):
 
             # print(type(results), results)
             pass
-
-
 
 
 async def main():
