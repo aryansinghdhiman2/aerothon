@@ -1,20 +1,20 @@
-from drone_helper import connect_to_drone,moveToAlt,GUIDED,LocationGlobal
-import time
-from dronekit import LocationGlobalRelative
+from  threading import Timer
 
-# vehicle = connect_to_drone("tcp:localhost:5762")
-vehicle = connect_to_drone("udpout:10.42.0.1:10000")
+def myfunc():
+    print("hello")
+    pass
 
-# vehicle.message_factory.system_time_send(time.time(),time.time())
+def restartTimer(old_timer : Timer) -> Timer:
+    old_timer.cancel()
+    new_timer = Timer(interval=old_timer.interval,function=old_timer.function)
+    new_timer.start()
+    return new_timer
 
+t = Timer(interval=5,function=myfunc)
+t.start()
+t.cancel()
 
-print("Going")
-vehicle.mode = GUIDED
-
-# l = LocationGlobalRelative(-30.7479417,76.7565145,20)
-
-moveToAlt(vehicle,30.7477394,76.7567633,15)
-# vehicle.simple_goto(l)
-# print(vehicle.location.global_frame)
-# print(vehicle.location.local_frame)
-# print(vehicle.location.global_relative_frame)
+t = restartTimer(t)
+t.join()
+# t.cancel()
+# t.start()
