@@ -29,7 +29,7 @@ controller_15 = configure_pid((-0.0000125390625),(-0.0000125390625),0.6,0.6)
 
 frame_cnt = 0
 
-myTimer = Timer(10,restartActionFlow)
+myTimer = Timer(5,restartActionFlow)
 
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
@@ -38,13 +38,13 @@ def handle_my_custom_event(json):
 
 @socketio.on("alignment")
 def handle_first_alignment(args):
+    global myTimer
     if(vehicle.mode == GUIDED or vehicle.mode == AUTO):
         lat, lon, alt, heading = args["location"]
         center: list[int] = args["center"]
         state:int = args["alignment_state"]
         print(f"args: {args}")
         if state == 0:
-            myTimer = restartTimer(myTimer)
             print("state 0")
             vehicle.mode = GUIDED
             goto_center_body_ned(vehicle,alt,heading,center[0],center[1])
