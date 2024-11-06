@@ -70,7 +70,7 @@ def sendRollAndPitch(vehicle:Vehicle,roll_val:float,pitch_val:float,descend_spee
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
     0,      
     0, 0,    
-    mavutil.mavlink.MAV_FRAME_BODY_NED,  #relative to drone heading pos relative to EKF origin
+    mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,  #relative to drone heading pos relative to EKF origin
     0b0000110111000111, 
     0, 0, 0,
     pitch_val, roll_val, descend_speed, 
