@@ -31,7 +31,7 @@ sensor_height = 2.76 / 1000
 
 #DRONE
 def connect_to_drone(address:str) -> Vehicle:
-    vehicle:Vehicle = connect(address,source_system=255,source_component=170)
+    vehicle:Vehicle = connect(address)
     vehicle.wait_ready(True,timeout=300)
     return vehicle
 
