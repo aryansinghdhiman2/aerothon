@@ -47,7 +47,7 @@ def handle_first_alignment(args):
         if state == 0:
             print("state 0")
             vehicle.mode = GUIDED
-            vehicle.wait_for_mode(AUTO)
+            vehicle.wait_for_mode(GUIDED)
             vehicle.parameters['WPNAV_SPEED'] = 100   
             vehicle.commands.next = vehicle.commands.next - 1
             vehicle.mode = AUTO
