@@ -1,4 +1,4 @@
-from dronekit import connect,VehicleMode,LocationGlobal,Vehicle, mavutil
+from dronekit import connect,VehicleMode,LocationGlobal,Vehicle, mavutil,mavwp
 import time
 from simple_pid import PID
 
@@ -31,7 +31,7 @@ sensor_height = 2.76 / 1000
 
 #DRONE
 def connect_to_drone(address:str) -> Vehicle:
-    vehicle:Vehicle = connect(address)
+    vehicle:Vehicle = connect(address,source_system=255,source_component=170)
     vehicle.wait_ready(True,timeout=300)
     return vehicle
 
