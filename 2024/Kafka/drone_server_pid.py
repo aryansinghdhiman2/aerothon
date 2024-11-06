@@ -6,7 +6,7 @@ from threading import Timer
 
 def restartTimer(old_timer : Timer) -> Timer:
     old_timer.cancel()
-    new_timer = Timer(interval=old_timer.interval,function=old_timer.function)
+    new_timer = Timer(interval=10,function=old_timer.function)
     new_timer.start()
     return new_timer
 
@@ -29,7 +29,7 @@ controller_15 = configure_pid((-0.0000125390625),(-0.0000125390625),0.6,0.6)
 
 frame_cnt = 0
 
-myTimer = Timer(5,restartActionFlow)
+myTimer = Timer(10,restartActionFlow)
 
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
@@ -47,8 +47,11 @@ def handle_first_alignment(args):
         if state == 0:
             print("state 0")
             vehicle.mode = GUIDED
-            goto_center_body_ned(vehicle,alt,heading,center[0],center[1])
-            time.sleep(2)
+            vehicle.wait_for_mode(AUTO)
+            vehicle.parameters['WPNAV_SPEED'] = 100   
+            vehicle.commands.next = vehicle.commands.next - 1
+            vehicle.mode = AUTO
+            vehicle.wait_for_mode(AUTO)
             socketio.emit(client_channel_str, 1)
             myTimer = restartTimer(myTimer)
         elif state == 1:
@@ -72,6 +75,7 @@ def handle_first_alignment(args):
                         time.sleep(1)
                     time.sleep(3)
                     drop_and_return_to_15(vehicle)
+                    vehicle.parameters['WPNAV_SPEED'] = 300   
                     vehicle.mode = AUTO
 
 if __name__ == "__main__":
