@@ -4,16 +4,16 @@ import time
 from drone_helper import connect_to_drone, Vehicle, goto_center, align_at_center, move_to_center_image_coords_with_custom_loc, drop_and_return_to_15, AUTO, configure_pid, move_to_center,getCurrentLocation,moveToAlt,get_distance_metres,LocationGlobal,drop_and_return_to_15,GUIDED,goto_center_body_ned
 from threading import Timer
 
-def restartTimer(old_timer : Timer) -> Timer:
-    old_timer.cancel()
-    new_timer = Timer(interval=10,function=old_timer.function)
-    new_timer.start()
-    return new_timer
+# def restartTimer(old_timer : Timer) -> Timer:
+#     old_timer.cancel()
+#     new_timer = Timer(interval=10,function=old_timer.function)
+#     new_timer.start()
+#     return new_timer
 
-def restartActionFlow():
-    socketio.emit(client_channel_str,0)
-    if(vehicle.mode == GUIDED):
-        vehicle.mode = AUTO
+# def restartActionFlow():
+#     socketio.emit(client_channel_str,0)
+#     if(vehicle.mode == GUIDED):
+#         vehicle.mode = AUTO
 
 
 
@@ -27,10 +27,6 @@ client_channel_str: str = "requested_alignment_state"
 
 controller_15 = configure_pid((-0.0000125390625),(-0.0000125390625),0.6,0.6)
 
-frame_cnt = 0
-
-myTimer = Timer(10,restartActionFlow)
-
 @socketio.on("drone_data")
 def handle_my_custom_event(json):
     print(str(json))
@@ -38,7 +34,6 @@ def handle_my_custom_event(json):
 
 @socketio.on("alignment")
 def handle_first_alignment(args):
-    global myTimer
     if(vehicle.mode == GUIDED or vehicle.mode == AUTO):
         lat, lon, alt, heading = args["location"]
         center: list[int] = args["center"]
@@ -53,30 +48,23 @@ def handle_first_alignment(args):
             vehicle.mode = AUTO
             vehicle.wait_for_mode(AUTO)
             socketio.emit(client_channel_str, 1)
-            myTimer = restartTimer(myTimer)
         elif state == 1:
-            myTimer = restartTimer(myTimer)
             vehicle.mode = GUIDED
             if(abs(center[0]) > 10 or abs(center[1]) > 10):
                 move_to_center(vehicle,controller_15,center[0],center[1])
             else:
-                if(frame_cnt < 10):
-                    frame_cnt+=1
-                    move_to_center(vehicle,controller_15,center[0],center[1])
-                else:
-                    myTimer.cancel()
-                    socketio.emit(client_channel_str,2)
+                socketio.emit(client_channel_str,2)
+                time.sleep(1)
+                print("going to 5 in server")
+                location = getCurrentLocation(vehicle)
+                moveToAlt(vehicle,location.lat,location.lon,5)
+                
+                while(getCurrentLocation(vehicle).alt > 6):
                     time.sleep(1)
-                    print("going to 5 in server")
-                    location = getCurrentLocation(vehicle)
-                    moveToAlt(vehicle,location.lat,location.lon,5)
-                    
-                    while(getCurrentLocation(vehicle).alt > 6):
-                        time.sleep(1)
-                    time.sleep(3)
-                    drop_and_return_to_15(vehicle)
-                    vehicle.parameters['WPNAV_SPEED'] = 300   
-                    vehicle.mode = AUTO
+                time.sleep(3)
+                drop_and_return_to_15(vehicle)
+                vehicle.parameters['WPNAV_SPEED'] = 300   
+                vehicle.mode = AUTO
 
 if __name__ == "__main__":
     socketio.run(app)
