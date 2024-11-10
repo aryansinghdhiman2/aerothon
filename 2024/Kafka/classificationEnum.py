@@ -1,0 +1,3 @@
+HOTSPOT = 0
+TARGET = 1
+DET_OBJ = 2

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC Stream Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        video {
+            width: 80%;
+            height: auto;
+            background-color: #000;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="remoteVideo" autoplay playsinline controls></video>
+
+    <script>
+        const videoElement = document.getElementById('remoteVideo');
+
+        // Create a new RTCPeerConnection
+        const peerConnection = new RTCPeerConnection();
+
+        // Add the stream from the server to the video element
+        peerConnection.ontrack = (event) => {
+            videoElement.srcObject = event.streams[0];
+        };
+
+        // Connect to MediaMTX WebRTC signaling at 10.42.0.1:8889
+        const signalingUrl = 'ws://10.42.0.1:8889/cam'; // Update the URL based on your MediaMTX config
+        const signalingSocket = new WebSocket(signalingUrl);
+
+        signalingSocket.onopen = () => {
+            console.log('Connected to signaling server');
+        };
+
+        signalingSocket.onmessage = async (message) => {
+            const data = JSON.parse(message.data);
+
+            if (data.sdp) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                // Send the answer back to the server
+                signalingSocket.send(JSON.stringify({ sdp: peerConnection.localDescription }));
+            }
+
+            if (data.ice) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice));
+            }
+        };
+
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                signalingSocket.send(JSON.stringify({ ice: event.candidate }));
+            }
+        };
+    </script>
+
+</body>
+</html>
